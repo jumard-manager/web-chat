@@ -18,15 +18,12 @@
           </v-flex>
           <v-spacer></v-spacer>
           <v-flex xs2>
-            <v-btn @click="chat_start" color='primary' :disabled="!!connected">Connect</v-btn>
-          </v-flex>
-          <v-flex xs2>
-            <v-btn @click="chat_end" color='error' :disabled="!connected">Disconnect</v-btn>
+            <v-btn @click="connect" :color="!connected?'primary':'error'">{{cbutton}}</v-btn>
           </v-flex>
           <v-spacer></v-spacer>
         </v-layout>
-        <v-layout justify-left wrap >
-          <v-list class="overflow-y-auto scroll-to" height="300" v-bind:style='"width:400px"'>
+        <v-layout justify-center wrap :style="`margin: 20px 0;`">
+          <v-list class="overflow-y-auto scroll-to" height="300" :style="`width: 90%`">
             <v-list-item v-for="(item, i) in items" :key="i" >
               <span v-html="item.msg" ></span>
             </v-list-item>
@@ -60,28 +57,40 @@ export default {
     name:'user-' + Math.random().toString(32).substring(5),
     connected: false,
   }),
+  computed: {
+    cbutton: function(){
+      if(this.connected) {
+        return 'Disconnect'
+      } else {
+        return 'Connect'
+      }
+    },
+  },
   methods: {
     commit_txt : function () {
       var elem = this.$el
       elem.scrollTop = elem.clientHeight;
-      ws.send(JSON.stringify({'message':this.text, 'name':this.name}));
+      if (this.text != '') { 
+        ws.send(JSON.stringify({'message':this.text, 'name':this.name}));
+      }
       //this.items.push({msg:this.text});
       this.text = '';
     },
-    chat_start: function () {
-      ws = new WebSocket(url+this.room);
-      ws.onopen = function(event) {
-        console.log(">> onopen");
-        console.log(event);
-      };
-      ws.onmessage = this.onmessage;
-      ws.onerror = this.onerror;
-      ws.onclose = this.onclose;
-      this.connected=true;
-    },
-    chat_end: function () {
-      ws.close();
-      ws = null;
+    connect: function () {
+      if(!this.connected) {
+        ws = new WebSocket(url+this.room);
+        ws.onopen = function(event) {
+          console.log(">> onopen");
+          console.log(event);
+        };
+        ws.onmessage = this.onmessage;
+        ws.onerror = this.onerror;
+        ws.onclose = this.onclose;
+        this.connected=true;
+      } else {
+        ws.close();
+        ws = null;
+      }
     },
     onmessage: function (event) {
       console.log(">> onmessage");
